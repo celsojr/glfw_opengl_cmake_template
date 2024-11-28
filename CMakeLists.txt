@@ -18,6 +18,14 @@ include(ExternalProject)
 # Define the resource directory
 set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res)
 
+option(BUILD_WASM "Build for WebAssembly" OFF)
+
+if (BUILD_WASM)
+    message(STATUS "Configuring for WebAssembly...")
+    set(CMAKE_TOOLCHAIN_FILE $ENV{EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake)
+    set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res)
+endif()
+
 ExternalProject_Add(${PROJECT_NAME}_core
   DEPENDS GLFW_external GLEW_external glm_external
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -25,6 +33,8 @@ ExternalProject_Add(${PROJECT_NAME}_core
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DSTAGED_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
     -DRESOURCES_DIR=${RESOURCES_DIR}
+    -DBUILD_WASM=${BUILD_WASM}
+    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
   CMAKE_CACHE_ARGS
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
   BUILD_ALWAYS ON

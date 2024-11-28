@@ -5,6 +5,8 @@ project(glfw_opengl_cmake_template_core LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(BUILD_WASM "Build for WebAssembly" OFF)
+
 # Paths for dependencies
 file(TO_NATIVE_PATH "${STAGED_INSTALL_PREFIX}/lib/cmake/glfw3" glfw3_DIR)
 file(TO_NATIVE_PATH "${STAGED_INSTALL_PREFIX}/lib/cmake/glew" GLEW_DIR)
@@ -19,23 +21,51 @@ find_package(GLEW REQUIRED CONFIG)
 
 set(SRCS main.cpp)
 
-if(APPLE)
-    # Create bundle on Apple
-    add_executable(main MACOSX_BUNDLE ${SRCS})
+if (BUILD_WASM)
+    # Create the WebAssembly target
+    add_executable(OpenGLWASM ${SRCS})
 
-    # Set a custom plist file for the app bundle (needed for Mac OS Retina display)
-    set_target_properties(main PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+    # Set the output properties for the WASM target
+    set_target_properties(OpenGLWASM PROPERTIES
+        OUTPUT_NAME "index"             # Output file name will be "index"
+        SUFFIX ".html"                  # Output file will have ".html" suffix
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/wasm
+    )
+
+    target_compile_options(OpenGLWASM PRIVATE
+        "-Os"                           # Optimize for size
+        "-s USE_WEBGL2=1"               # Enable WebGL 2.0
+        "-s FULL_ES3=1"                 # Full ES3 support
+        "-s USE_GLFW=3"                 # Use GLFW
+        "-s WASM=1"                     # Output WebAssembly
+        "-s ALLOW_MEMORY_GROWTH=1"      # Allow memory growth
+    )
+
+    target_link_options(OpenGLWASM PRIVATE
+        "-s ASSERTIONS=0"               # Disable assertions
+    )
+
+    # Copy resources for WASM
+    file(COPY ${RESOURCES_DIR} DESTINATION ${CMAKE_BINARY_DIR}/wasm/res)
 else()
+    # Native build
+    if(APPLE)
+        add_executable(main MACOSX_BUNDLE ${SRCS})
+        # Set a custom plist file for the app bundle (needed for Mac OS Retina display)
+        set_target_properties(main PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+        )
+    else()
     # No WIN32! We don't want WinMain() with GLFW.
     add_executable(main ${SRCS} main.exe.manifest)
 endif()
 
-target_link_libraries(main PRIVATE GLEW::glew_s glfw)
+    target_link_libraries(main PRIVATE GLEW::glew_s glfw)
+endif()
 
 if(NOT DEFINED RESOURCES_DIR)
     message(FATAL_ERROR "RESOURCES_DIR is not defined")
 endif()
 
 message(STATUS "RESOURCES_DIR is... ${RESOURCES_DIR}")
-
 target_compile_definitions(main PRIVATE RESOURCES_DIR="${RESOURCES_DIR}")

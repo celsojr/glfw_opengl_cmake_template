@@ -28,6 +28,35 @@
                 "-S.",
                 "-Bbuild"
             ]
+        },
+        {
+            "label": "Build with CMake (WASM)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S.",
+                "-Bbuild/wasm",
+                "-DBUILD_WASM=ON",
+                "-DCMAKE_TOOLCHAIN_FILE=${env:EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "Build (WASM)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build/wasm",
+                "-j",
+                "12"
+            ],
+            "group": {
+                "kind": "build"
+            }
         }
     ]
 }

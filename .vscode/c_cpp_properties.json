@@ -32,7 +32,7 @@
         "name": "Linux",
         "includePath": [
             "${workspaceFolder}/src/**",
-            "${workspaceFolder}/build/stage/include/**",
+            "${workspaceFolder}/build/stage/include/**"
         ],
         "defines": [
         ],

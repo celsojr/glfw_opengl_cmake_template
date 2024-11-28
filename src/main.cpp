@@ -136,7 +136,8 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    textureID = loadTexture("res/texture/atlas.png");
+    std::cout << "Resource directory: " << RESOURCES_DIR << std::endl;
+    textureID = loadTexture((std::string(RESOURCES_DIR) + "/texture/atlas.png").c_str());
 
     if (textureID == 0)
     {

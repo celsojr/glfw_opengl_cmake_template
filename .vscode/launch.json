@@ -40,7 +40,7 @@
             "request": "launch",
             "url": "http://localhost:8080",
             "webRoot": "${workspaceFolder}/build/subprojects/Build/glfw_opengl_cmake_template_core",
-            "preLaunchTask": "Build with CMake"
+            "preLaunchTask": "Build with CMake (WASM)"
         }
     ]
 }

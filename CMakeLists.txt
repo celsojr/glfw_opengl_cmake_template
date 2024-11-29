@@ -10,20 +10,18 @@ set_property(DIRECTORY PROPERTY EP_BASE ${CMAKE_BINARY_DIR}/subprojects)
 
 set(STAGED_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/stage)
 set(EP_SOURCE_DIR_PREFIX ${CMAKE_BINARY_DIR}/subprojects/Source)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res)
 
 add_subdirectory(thirdparty)
 
 include(ExternalProject)
-
-# Define the resource directory
-set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res)
 
 option(BUILD_WASM "Build for WebAssembly" OFF)
 
 if (BUILD_WASM)
     message(STATUS "Configuring for WebAssembly...")
     set(CMAKE_TOOLCHAIN_FILE $ENV{EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake)
-    set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res)
 endif()
 
 ExternalProject_Add(${PROJECT_NAME}_core
@@ -32,6 +30,7 @@ ExternalProject_Add(${PROJECT_NAME}_core
   CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DSTAGED_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
+    -DINCLUDE_DIR=${INCLUDE_DIR}
     -DRESOURCES_DIR=${RESOURCES_DIR}
     -DBUILD_WASM=${BUILD_WASM}
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}

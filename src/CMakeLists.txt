@@ -47,7 +47,8 @@ if (BUILD_WASM)
     set_target_properties(main PROPERTIES
         OUTPUT_NAME "index"                    # Output file name will be "index"
         SUFFIX ".html"                         # Output file will have ".html" suffix
-        LINK_FLAGS "-Os -s USE_WEBGL2=1 -s FULL_ES3=1 -s USE_GLFW=3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s OFFSCREEN_FRAMEBUFFER=1 -g -s ASSERTIONS=1 -s DEMANGLE_SUPPORT=1 -s SAFE_HEAP=1 --no-minify"
+        # LINK_FLAGS "-Os -s USE_WEBGL2=1 -s FULL_ES3=1 -s USE_GLFW=3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s OFFSCREEN_FRAMEBUFFER=1 -g -s ASSERTIONS=1 -s DEMANGLE_SUPPORT=1 -s SAFE_HEAP=1 --no-minify --use-preload-plugins --preload-file ${WASM_OUTPUT_DIR}@/res -s FETCH=1 --embed-file ${RESOURCES_DIR}"
+        LINK_FLAGS "-Os -s USE_WEBGL2=1 -s FULL_ES3=1 -s USE_GLFW=3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s OFFSCREEN_FRAMEBUFFER=1 -g -s ASSERTIONS=1 -s DEMANGLE_SUPPORT=1 -s SAFE_HEAP=1 --no-minify --embed-file ${WASM_OUTPUT_DIR}/wasm/res -s GL_DEBUG=1"
         RUNTIME_OUTPUT_DIRECTORY ${WASM_OUTPUT_DIR}/wasm
     )
 
@@ -66,10 +67,10 @@ if (BUILD_WASM)
     #     "--no-minify"                          # Avoid minified JS for easier debugging
     # )
 
-    target_link_options(main PRIVATE
-        "-s ASSERTIONS=0"                      # Disable assertions
-        "--preload-file ${WASM_OUTPUT_DIR}@/wasm/res" # Preload resources
-    )
+    # target_link_options(main PRIVATE
+    #     "-s ASSERTIONS=0"                        # Disable assertions
+    #     "--preload-file ${WASM_OUTPUT_DIR}@/res" # Preload resources
+    # )
 
     # Add include directories
     target_include_directories(main PRIVATE ${INCLUDE_DIR})
@@ -108,4 +109,4 @@ else()
 endif()
 
 # target_compile_definitions(main PRIVATE RESOURCES_DIR="${RESOURCES_DIR}")
-target_compile_definitions(main PRIVATE RESOURCES_DIR="res")
+target_compile_definitions(main PRIVATE RESOURCES_DIR="${WASM_OUTPUT_DIR}/wasm/res")

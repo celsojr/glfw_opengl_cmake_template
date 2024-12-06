@@ -13,7 +13,6 @@ GLuint loadTexture(const char *filepath);
 
 // Vertex and fragment shader source codes
 const char *vertexShaderSource = R"(
-    #version 330 core
     layout (location = 0) in vec3 aPos;
     layout (location = 1) in vec2 aTexCoord;
 
@@ -27,7 +26,6 @@ const char *vertexShaderSource = R"(
 )";
 
 const char *fragmentShaderSource = R"(
-    #version 330 core
     out vec4 FragColor;
     in vec2 TexCoord;
 

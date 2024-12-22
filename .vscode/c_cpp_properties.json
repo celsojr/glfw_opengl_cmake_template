@@ -3,8 +3,8 @@
       {
           "name": "Mac",
           "includePath": [
-              "${workspaceFolder}/src/**",
-              "${workspaceFolder}/build/stage/include/**",
+              "${workspaceFolder}/inc/**",
+              "${workspaceFolder}/build/stage/include/**"
           ],
           "defines": [
           ],
@@ -17,7 +17,7 @@
       {
           "name": "Windows",
           "includePath": [
-              "${workspaceFolder}/src/**",
+              "${workspaceFolder}/inc/**",
               "${workspaceFolder}/build/stage/include/**"
           ],
           "defines": [
@@ -31,8 +31,8 @@
       {
         "name": "Linux",
         "includePath": [
-            "${workspaceFolder}/src/**",
-            "${workspaceFolder}/build/stage/include/**",
+            "${workspaceFolder}/inc/**",
+            "${workspaceFolder}/build/stage/include/**"
         ],
         "defines": [
         ],

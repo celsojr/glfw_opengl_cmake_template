@@ -13,7 +13,6 @@ GLuint loadTexture(const char *filepath);
 
 // Vertex and fragment shader source codes
 const char *vertexShaderSource = R"(
-    #version 330 core
     layout (location = 0) in vec3 aPos;
     layout (location = 1) in vec2 aTexCoord;
 
@@ -27,7 +26,6 @@ const char *vertexShaderSource = R"(
 )";
 
 const char *fragmentShaderSource = R"(
-    #version 330 core
     out vec4 FragColor;
     in vec2 TexCoord;
 
@@ -136,7 +134,8 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    textureID = loadTexture("res/texture/atlas.png");
+    std::cout << "Resource directory: " << RESOURCES_DIR << std::endl;
+    textureID = loadTexture((std::string(RESOURCES_DIR) + "/textures/atlas.png").c_str());
 
     if (textureID == 0)
     {

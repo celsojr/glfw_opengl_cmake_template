@@ -4,19 +4,17 @@
 #include <sstream>
 #include <GLFW/glfw3.h>
 
-// Include stb_image for loading images
-// https://github.com/nothings/stb/blob/master/stb_image.h
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "texture.h"
 
 void framebufferSizeChanged(GLFWwindow *window, int width, int height);
-void render(GLFWwindow *window);
-GLuint loadTexture(const std::string &filepath);
+void render(GLFWwindow *window, Texture &texture);
 std::string readFile(const std::string &filepath);
 GLuint compileShader(const char *source, GLenum shaderType);
 GLuint createShaderProgram(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
 
-GLuint VAO, VBO, EBO, textureID;
+// GLuint VAO, VBO, EBO, textureID;
+GLuint VAO, VBO, EBO;
 GLuint shaderProgram;
 
 const int W_WIDTH = 400, W_HEIGHT = 600;
@@ -59,8 +57,12 @@ int main()
 
     shaderProgram = createShaderProgram(RESOURCES_DIR "/shaders/vertexShader.glsl", RESOURCES_DIR "/shaders/fragmentShader.glsl");
 
-    // Set stb_image to flip loaded textures on the y-axis
-    stbi_set_flip_vertically_on_load(true);
+    int textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
+    if (textureLocation == -1)
+    {
+        std::cerr << "Failed to get uniform location for 'ourTexture'" << std::endl;
+    }
+    glUniform1i(textureLocation, 0);
 
     // Define vertices and texture coordinates for a quad (will be scaled to texture size)
     // float aspectRatio = 384.0f / 32.0f;
@@ -98,25 +100,11 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    textureID = loadTexture(RESOURCES_DIR "/textures/atlas.png");
-
-    if (textureID == 0)
-    {
-        std::cerr << "Failed to load texture" << std::endl;
-        glfwTerminate();
-        return EXIT_FAILURE;
-    }
-
-    int textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
-    if (textureLocation == -1)
-    {
-        std::cerr << "Failed to get uniform location for 'ourTexture'" << std::endl;
-    }
-    glUniform1i(textureLocation, 0);
+    Texture texture(RESOURCES_DIR "/textures/atlas.png");
 
     while (!glfwWindowShouldClose(window))
     {
-        render(window);
+        render(window, texture);
         glfwPollEvents();
     }
 
@@ -127,39 +115,6 @@ int main()
 void framebufferSizeChanged(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
-}
-
-GLuint loadTexture(const std::string &filepath)
-{
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    std::cout << "Loading texture from: " << filepath << std::endl;
-
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(filepath.c_str(), &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cerr << "Failed to load texture from: " << filepath << std::endl;
-        return 0;
-    }
-
-    return textureID;
 }
 
 std::string readFile(const std::string &filepath)
@@ -237,14 +192,14 @@ GLuint createShaderProgram(const std::string &vertexShaderPath, const std::strin
     return program;
 }
 
-void render(GLFWwindow *window)
+void render(GLFWwindow *window, Texture &texture)
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Bind texture and shader program
     glUseProgram(shaderProgram);
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    texture.bind();
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

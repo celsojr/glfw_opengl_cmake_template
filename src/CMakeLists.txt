@@ -14,7 +14,10 @@ message(STATUS "GLEW_DIR is... ${GLEW_DIR}")
 set(GLEW_USE_STATIC_LIBS ON)
 find_package(GLEW REQUIRED CONFIG)
 
-set(SRCS main.cpp)
+file(GLOB SRCS "${SOURCE_DIR}/*.cpp")
+
+message(STATUS "Source directory: ${SOURCE_DIR}")
+message(STATUS "Source files: ${SRCS}")
 
 if(NOT DEFINED INCLUDE_DIR)
     message(FATAL_ERROR "INCLUDE_DIR is not defined")

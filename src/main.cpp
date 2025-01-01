@@ -1,5 +1,7 @@
 #include <iostream>
+#include <fstream>
 #include <GL/glew.h>
+#include <sstream>
 #include <GLFW/glfw3.h>
 
 // Include stb_image for loading images
@@ -9,33 +11,10 @@
 
 void framebufferSizeChanged(GLFWwindow *window, int width, int height);
 void render(GLFWwindow *window);
-GLuint loadTexture(const char *filepath);
-
-// Vertex and fragment shader source codes
-const char *vertexShaderSource = R"(
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec2 aTexCoord;
-
-    out vec2 TexCoord;
-
-    void main()
-    {
-        gl_Position = vec4(aPos, 1.0);
-        TexCoord = aTexCoord;
-    }
-)";
-
-const char *fragmentShaderSource = R"(
-    out vec4 FragColor;
-    in vec2 TexCoord;
-
-    uniform sampler2D ourTexture;
-
-    void main()
-    {
-        FragColor = texture(ourTexture, TexCoord);
-    }
-)";
+GLuint loadTexture(const std::string &filepath);
+std::string readFile(const std::string &filepath);
+GLuint compileShader(const char *source, GLenum shaderType);
+GLuint createShaderProgram(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
 
 GLuint VAO, VBO, EBO, textureID;
 GLuint shaderProgram;
@@ -78,22 +57,7 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeChanged);
 
-    // Compile shaders and link them into a program
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    shaderProgram = createShaderProgram(RESOURCES_DIR "/shaders/vertexShader.glsl", RESOURCES_DIR "/shaders/fragmentShader.glsl");
 
     // Set stb_image to flip loaded textures on the y-axis
     stbi_set_flip_vertically_on_load(true);
@@ -134,8 +98,7 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    std::cout << "Resource directory: " << RESOURCES_DIR << std::endl;
-    textureID = loadTexture((std::string(RESOURCES_DIR) + "/textures/atlas.png").c_str());
+    textureID = loadTexture(RESOURCES_DIR "/textures/atlas.png");
 
     if (textureID == 0)
     {
@@ -143,6 +106,13 @@ int main()
         glfwTerminate();
         return EXIT_FAILURE;
     }
+
+    int textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
+    if (textureLocation == -1)
+    {
+        std::cerr << "Failed to get uniform location for 'ourTexture'" << std::endl;
+    }
+    glUniform1i(textureLocation, 0);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -159,13 +129,15 @@ void framebufferSizeChanged(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-GLuint loadTexture(const char *filepath)
+GLuint loadTexture(const std::string &filepath)
 {
     GLuint textureID;
     glGenTextures(1, &textureID);
 
+    std::cout << "Loading texture from: " << filepath << std::endl;
+
     int width, height, nrChannels;
-    unsigned char *data = stbi_load(filepath, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(filepath.c_str(), &width, &height, &nrChannels, 0);
     if (data)
     {
         GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
@@ -183,11 +155,86 @@ GLuint loadTexture(const char *filepath)
     }
     else
     {
-        std::cerr << "Failed to load texture from " << filepath << std::endl;
-        return EXIT_FAILURE;
+        std::cerr << "Failed to load texture from: " << filepath << std::endl;
+        return 0;
     }
 
     return textureID;
+}
+
+std::string readFile(const std::string &filepath)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open file: " << filepath << std::endl;
+        return "";
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+    return buffer.str();
+}
+
+GLuint compileShader(const char *source, GLenum shaderType)
+{
+    GLuint shader = glCreateShader(shaderType);
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        std::cerr << "Shader Compilation Error:\n"
+                  << infoLog << std::endl;
+        return 0;
+    }
+
+    return shader;
+}
+
+GLuint createShaderProgram(const std::string &vertexShaderPath, const std::string &fragmentShaderPath)
+{
+    std::string vertexShaderCode = readFile(vertexShaderPath);
+    std::string fragmentShaderCode = readFile(fragmentShaderPath);
+
+    if (vertexShaderCode.empty() || fragmentShaderCode.empty())
+    {
+        return 0;
+    }
+
+    GLuint vertexShader = compileShader(vertexShaderCode.c_str(), GL_VERTEX_SHADER);
+    GLuint fragmentShader = compileShader(fragmentShaderCode.c_str(), GL_FRAGMENT_SHADER);
+
+    if (vertexShader == 0 || fragmentShader == 0)
+    {
+        return 0;
+    }
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    glLinkProgram(program);
+
+    GLint success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        std::cerr << "Shader Program Linking Error:\n"
+                  << infoLog << std::endl;
+        return 0;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return program;
 }
 
 void render(GLFWwindow *window)

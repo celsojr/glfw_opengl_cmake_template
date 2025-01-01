@@ -7,13 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_WASM "Build for WebAssembly" OFF)
 
-# file(TO_NATIVE_PATH "${STAGED_INSTALL_PREFIX}/lib/cmake/glfw3" glfw3_DIR)
 file(TO_NATIVE_PATH "${STAGED_INSTALL_PREFIX}/lib/cmake/glew" GLEW_DIR)
 
-# message(STATUS "glfw3_DIR is... ${glfw3_DIR}")
 message(STATUS "GLEW_DIR is... ${GLEW_DIR}")
-
-# find_package(glfw3 REQUIRED CONFIG)
 
 set(GLEW_USE_STATIC_LIBS ON)
 find_package(GLEW REQUIRED CONFIG)
@@ -91,6 +87,7 @@ if (BUILD_WASM)
 
     # Copy resources for WASM
     file(COPY ${RESOURCES_DIR} DESTINATION ${WASM_OUTPUT_DIR}/wasm)
+    target_compile_definitions(main PRIVATE RESOURCES_DIR="${WASM_OUTPUT_DIR}/wasm/res")
 else()
     # Native build
     if(APPLE)
@@ -104,9 +101,13 @@ else()
         add_executable(main ${SRCS} ${HEADERS} main.exe.manifest)
     endif()
 
+    file(TO_NATIVE_PATH "${STAGED_INSTALL_PREFIX}/lib/cmake/glfw3" glfw3_DIR)
+
+    message(STATUS "glfw3_DIR is... ${glfw3_DIR}")
+
+    find_package(glfw3 REQUIRED CONFIG)
+
     target_include_directories(main PRIVATE ${INCLUDE_DIR})
     target_link_libraries(main PRIVATE GLEW::glew_s glfw)
+    target_compile_definitions(main PRIVATE RESOURCES_DIR="${RESOURCES_DIR}")
 endif()
-
-# target_compile_definitions(main PRIVATE RESOURCES_DIR="${RESOURCES_DIR}")
-target_compile_definitions(main PRIVATE RESOURCES_DIR="${WASM_OUTPUT_DIR}/wasm/res")

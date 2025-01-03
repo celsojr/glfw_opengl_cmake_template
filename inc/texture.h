@@ -14,14 +14,10 @@ private:
 
 public:
     Texture() = delete;
-
     Texture(const std::string &filepath);
-
-    void bind() const;
-
-    void unbind() const;
-
     ~Texture();
+    void bind() const;
+    void unbind() const;
 };
 
 #endif // TEXTURE_H

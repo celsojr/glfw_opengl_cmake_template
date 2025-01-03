@@ -1,21 +1,13 @@
-#include <iostream>
-#include <fstream>
-#include <GL/glew.h>
-#include <sstream>
-#include <GLFW/glfw3.h>
-
 #include "stb_image.h"
 #include "texture.h"
+#include "shader.h"
 
 void framebufferSizeChanged(GLFWwindow *window, int width, int height);
-void render(GLFWwindow *window, Texture &texture);
-std::string readFile(const std::string &filepath);
-GLuint compileShader(const char *source, GLenum shaderType);
-GLuint createShaderProgram(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
+void render(GLFWwindow *window);
 
-// GLuint VAO, VBO, EBO, textureID;
 GLuint VAO, VBO, EBO;
-GLuint shaderProgram;
+Texture *texture;
+Shader *shaderProgram;
 
 const int W_WIDTH = 400, W_HEIGHT = 600;
 
@@ -55,9 +47,9 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeChanged);
 
-    shaderProgram = createShaderProgram(RESOURCES_DIR "/shaders/vertexShader.glsl", RESOURCES_DIR "/shaders/fragmentShader.glsl");
+    shaderProgram = new Shader(RESOURCES_DIR "/shaders/vertexShader.glsl", RESOURCES_DIR "/shaders/fragmentShader.glsl");
 
-    int textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
+    int textureLocation = glGetUniformLocation(shaderProgram->ID, "ourTexture");
     if (textureLocation == -1)
     {
         std::cerr << "Failed to get uniform location for 'ourTexture'" << std::endl;
@@ -76,6 +68,7 @@ int main()
         scaleX, scaleY, 0.0f, 1.0f, 1.0f,   // top right
         -scaleX, scaleY, 0.0f, 0.0f, 1.0f   // top left
     };
+
     unsigned int indices[] = {
         0, 1, 2,
         2, 3, 0};
@@ -100,16 +93,16 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    Texture texture(RESOURCES_DIR "/textures/atlas.png");
+    texture = new Texture(RESOURCES_DIR "/textures/atlas.png");
 
     while (!glfwWindowShouldClose(window))
     {
-        render(window, texture);
+        render(window);
         glfwPollEvents();
     }
 
     glfwTerminate();
-    return EXIT_SUCCESS;
+    return 0;
 }
 
 void framebufferSizeChanged(GLFWwindow *window, int width, int height)
@@ -117,89 +110,14 @@ void framebufferSizeChanged(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-std::string readFile(const std::string &filepath)
-{
-    std::ifstream file(filepath);
-    if (!file.is_open())
-    {
-        std::cerr << "Failed to open file: " << filepath << std::endl;
-        return "";
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    file.close();
-    return buffer.str();
-}
-
-GLuint compileShader(const char *source, GLenum shaderType)
-{
-    GLuint shader = glCreateShader(shaderType);
-    glShaderSource(shader, 1, &source, NULL);
-    glCompileShader(shader);
-
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        char infoLog[512];
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        std::cerr << "Shader Compilation Error:\n"
-                  << infoLog << std::endl;
-        return 0;
-    }
-
-    return shader;
-}
-
-GLuint createShaderProgram(const std::string &vertexShaderPath, const std::string &fragmentShaderPath)
-{
-    std::string vertexShaderCode = readFile(vertexShaderPath);
-    std::string fragmentShaderCode = readFile(fragmentShaderPath);
-
-    if (vertexShaderCode.empty() || fragmentShaderCode.empty())
-    {
-        return 0;
-    }
-
-    GLuint vertexShader = compileShader(vertexShaderCode.c_str(), GL_VERTEX_SHADER);
-    GLuint fragmentShader = compileShader(fragmentShaderCode.c_str(), GL_FRAGMENT_SHADER);
-
-    if (vertexShader == 0 || fragmentShader == 0)
-    {
-        return 0;
-    }
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glLinkProgram(program);
-
-    GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        char infoLog[512];
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        std::cerr << "Shader Program Linking Error:\n"
-                  << infoLog << std::endl;
-        return 0;
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return program;
-}
-
-void render(GLFWwindow *window, Texture &texture)
+void render(GLFWwindow *window)
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Bind texture and shader program
-    glUseProgram(shaderProgram);
-    texture.bind();
+    // Bind shader program and texture
+    shaderProgram->use();
+    texture->bind();
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

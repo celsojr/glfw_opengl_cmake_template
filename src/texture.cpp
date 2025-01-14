@@ -1,5 +1,17 @@
 #include "texture.h"
 
+// Constants for texture atlas
+const float spriteWidth = 32.0f;
+const float atlasWidth = 384.0f; // Width of the entire texture atlas
+const float spriteHeight = 32.0f;
+const float atlasHeight = 32.0f; // Assuming 1 row in the atlas
+
+void Texture::getTextureCoords(int spriteIndex, float &texStartX, float &texEndX)
+{
+    texStartX = (spriteIndex * spriteWidth) / atlasWidth;
+    texEndX = ((spriteIndex + 1) * spriteWidth) / atlasWidth;
+}
+
 Texture::Texture(const std::string &filepath)
 {
     glGenTextures(1, &textureID);
@@ -43,6 +55,28 @@ Texture::Texture(const std::string &filepath)
 Texture::~Texture()
 {
     glDeleteTextures(1, &textureID);
+}
+
+void Texture::renderSprite(int spriteIndex, int w_width, int w_height)
+{
+    float texStartX, texEndX;
+    getTextureCoords(spriteIndex, texStartX, texEndX);
+
+    const float scaleX = 32.0f / (float)w_width;  // Width of texture relative to window width
+    const float scaleY = 32.0f / (float)w_height; // Height of texture relative to window height
+
+    // Update vertex array with calculated texture coordinates
+    float vertices[] = {
+        // scale          // texture coords
+        -scaleX, -scaleY, 0.0f, texStartX, 0.0f, // bottom left
+        scaleX, -scaleY, 0.0f, texEndX, 0.0f,    // bottom right
+        scaleX, scaleY, 0.0f, texEndX, 1.0f,     // top right
+        -scaleX, scaleY, 0.0f, texStartX, 1.0f   // top left
+    };
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // Draw the sprite
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void Texture::bind() const

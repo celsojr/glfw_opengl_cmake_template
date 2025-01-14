@@ -56,19 +56,6 @@ int main()
     }
     glUniform1i(textureLocation, 0);
 
-    // Define vertices and texture coordinates for a quad (will be scaled to texture size)
-    // float aspectRatio = 384.0f / 32.0f;
-    float scaleX = 384.0f / (float)W_WIDTH; // Width of texture relative to window width
-    float scaleY = 32.0f / (float)W_HEIGHT; // Height of texture relative to window height
-
-    float vertices[] = {
-        // scale          // texture coords
-        -scaleX, -scaleY, 0.0f, 0.0f, 0.0f, // bottom left
-        scaleX, -scaleY, 0.0f, 1.0f, 0.0f,  // bottom right
-        scaleX, scaleY, 0.0f, 1.0f, 1.0f,   // top right
-        -scaleX, scaleY, 0.0f, 0.0f, 1.0f   // top left
-    };
-
     unsigned int indices[] = {
         0, 1, 2,
         2, 3, 0};
@@ -80,7 +67,7 @@ int main()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -120,7 +107,8 @@ void render(GLFWwindow *window)
     texture->bind();
 
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    Texture::renderSprite(10, W_WIDTH, W_HEIGHT);
+    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window);
 }
